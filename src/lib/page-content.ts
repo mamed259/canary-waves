@@ -139,9 +139,16 @@ export type PageSection =
   | FAQSectionContent
   | LegalDocumentsSectionContent;
 
+export interface PageSeo {
+  metaTitle?: string;
+  metaDescription?: string;
+  canonicalUrl?: string;
+}
+
 export interface PageContent {
   title: string;
   slug: string;
+  seo?: PageSeo;
   sections: PageSection[];
 }
 

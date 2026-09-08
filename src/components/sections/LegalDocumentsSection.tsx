@@ -7,13 +7,48 @@ interface LegalDocumentsSectionProps {
   content: LegalDocumentsSectionContent;
 }
 
+function renderMarkdown(text: string) {
+  const blocks = text.split(/\n\s*\n/).map((block) => block.trim()).filter(Boolean);
+  return blocks.map((block, index) => {
+    if (block.startsWith("### ")) {
+      return <h3 key={index} style={{ marginTop: "1.5rem" }}>{block.slice(4)}</h3>;
+    }
+    if (block.startsWith("## ")) {
+      return <h2 key={index} style={{ marginTop: "2rem" }}>{block.slice(3)}</h2>;
+    }
+    if (block.startsWith("# ")) {
+      return <h2 key={index} style={{ marginTop: "2rem" }}>{block.slice(2)}</h2>;
+    }
+    const lines = block.split("\n");
+    if (lines.every((line) => /^(-|•)\s+/.test(line.trim()))) {
+      return (
+        <ul key={index} style={{ marginTop: "1rem", paddingLeft: "1.4rem" }}>
+          {lines.map((line, lineIndex) => (
+            <li key={lineIndex}>{line.replace(/^(-|•)\s+/, "")}</li>
+          ))}
+        </ul>
+      );
+    }
+    return (
+      <p key={index} style={{ marginTop: "1rem" }}>
+        {lines.map((line, lineIndex) => (
+          <span key={lineIndex}>
+            {lineIndex > 0 ? <br /> : null}
+            {line}
+          </span>
+        ))}
+      </p>
+    );
+  });
+}
+
 export default function LegalDocumentsSection({
   content,
 }: LegalDocumentsSectionProps) {
   const pathname = usePathname();
-  const isTerms = pathname === "/terms-of-use";
+  const isTerms = pathname.includes("terms");
   const title = isTerms ? "Terms of Use" : "Privacy Policy";
-  const body = isTerms ? content.termsOfUse : content.privacyPolicy;
+  const body = (isTerms ? content.termsOfUse : content.privacyPolicy) || content.privacyPolicy || content.termsOfUse;
 
   return (
     <section style={{ padding: "132px 56px 96px", background: "var(--stone)" }}>
@@ -25,10 +60,10 @@ export default function LegalDocumentsSection({
             color: "var(--marl)",
             lineHeight: 1.8,
             fontSize: "18px",
-            whiteSpace: "pre-wrap",
+            maxWidth: "72ch",
           }}
         >
-          {body}
+          {body ? renderMarkdown(body) : null}
         </div>
       </div>
     </section>

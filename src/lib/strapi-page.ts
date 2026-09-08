@@ -202,10 +202,11 @@ function createStrapiFetchOptions() {
   return options;
 }
 
-function getPageQueryParams(): URLSearchParams {
+function getPageQueryParams(slug: string): URLSearchParams {
   const params = new URLSearchParams();
-  params.append('filters[slug][$eq]', 'home');
+  params.append('filters[slug][$eq]', slug);
   params.append('status', STRAPI_CONTENT_STATUS);
+  params.append('populate[seo][populate]', 'ogImage');
   params.append('populate[sections][populate]', '*');
   return params;
 }
@@ -424,6 +425,10 @@ function parseSection(raw: JsonRecord, fallbacks: PageSection[]): PageSection | 
   const type = component ? COMPONENT_TYPE_MAP[component] : null;
   if (!type) return null;
 
+  if (type === 'legal-documents') {
+    return parseLegalDocuments(raw);
+  }
+
   const fallback = fallbacks.find((section) => section.type === type);
   if (!fallback) return null;
 
@@ -464,9 +469,15 @@ function parsePage(raw: JsonRecord | null, requestedSlug = 'home'): PageContent 
     .map((row) => parseSection(normalizeEntry(row) ?? {}, fallbacks))
     .filter((section): section is PageSection => Boolean(section));
 
+  const seo = asRecord(raw.seo);
   return {
     title: getString(raw.title) ?? defaultHomePage.title,
-    slug: getString(raw.slug) ?? defaultHomePage.slug,
+    slug: getString(raw.slug) ?? requestedSlug,
+    seo: {
+      metaTitle: getString(seo?.metaTitle) ?? undefined,
+      metaDescription: getString(seo?.metaDescription) ?? undefined,
+      canonicalUrl: getString(seo?.canonicalUrl) ?? undefined,
+    },
     sections:
       sections.length
         ? sections
@@ -476,23 +487,29 @@ function parsePage(raw: JsonRecord | null, requestedSlug = 'home'): PageContent 
   };
 }
 
+function emptyPage(slug: string): PageContent {
+  return {
+    title: slug,
+    slug,
+    sections: [],
+  };
+}
+
 export async function getPageBySlug(slug: string): Promise<PageContent> {
-  if (!STRAPI_URL) return defaultHomePage;
+  if (!STRAPI_URL) {
+    return slug === 'home' ? defaultHomePage : emptyPage(slug);
+  }
 
   try {
-    const params = getPageQueryParams();
-    if (slug !== 'home') {
-      params.set('filters[slug][$eq]', slug);
-    }
-
+    const params = getPageQueryParams(slug);
     const response = await fetch(`${STRAPI_URL}/api/pages?${params.toString()}`, createStrapiFetchOptions());
 
     if (!response.ok) {
       const body = await response.text();
       const message = `HTTP ${response.status} ${response.statusText}${body ? ` - ${body.slice(0, 220)}` : ''}`;
       if (STRAPI_FAIL_ON_ERROR) throw new Error(`Strapi page fetch failed: ${message}`);
-      console.warn(`Strapi page fetch warning (default fallback in use): ${message}`);
-      return defaultHomePage;
+      console.warn(`Strapi page fetch warning: ${message}`);
+      return slug === 'home' ? defaultHomePage : emptyPage(slug);
     }
 
     const payload = (await response.json()) as JsonRecord;
@@ -500,15 +517,15 @@ export async function getPageBySlug(slug: string): Promise<PageContent> {
     const pageData = normalizeEntry(dataArray[0]);
 
     if (!pageData) {
-      console.warn(`Strapi page "${slug}" not found. Using default content.`);
-      return defaultHomePage;
+      console.warn(`Strapi page "${slug}" not found.`);
+      return slug === 'home' ? defaultHomePage : emptyPage(slug);
     }
 
     return parsePage(pageData, slug);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (STRAPI_FAIL_ON_ERROR) throw new Error(`Strapi page fetch failed: ${message}`);
-    console.warn(`Strapi page fetch warning (default fallback in use): ${message}`);
-    return defaultHomePage;
+    console.warn(`Strapi page fetch warning: ${message}`);
+    return slug === 'home' ? defaultHomePage : emptyPage(slug);
   }
 }
