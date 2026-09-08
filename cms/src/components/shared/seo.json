@@ -1,9 +1,9 @@
 {
   "collectionName": "components_shared_seos",
   "info": {
-    "displayName": "SEO",
+    "displayName": "Meta title, description and canonical",
     "icon": "search",
-    "description": "SEO metadata for pages"
+    "description": "Search and social metadata shown in the browser tab and Google"
   },
   "options": {},
   "attributes": {

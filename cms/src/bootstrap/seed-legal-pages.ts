@@ -65,6 +65,9 @@ export async function seedLegalPagesIfMissing(strapi: StrapiInstance) {
   await createPageIfMissing(strapi, {
     title: "Privacy Policy",
     slug: "privacy-policy",
+    metaTitle: "Privacy Policy | Canary Waves",
+    metaDescription:
+      "Learn how Canary Waves collects, uses, stores, and protects personal information across our website and services.",
     seo: {
       metaTitle: "Privacy Policy | Canary Waves",
       metaDescription:
@@ -82,6 +85,9 @@ export async function seedLegalPagesIfMissing(strapi: StrapiInstance) {
   await createPageIfMissing(strapi, {
     title: "Terms of Use",
     slug: "terms-of-use",
+    metaTitle: "Terms of Use | Canary Waves",
+    metaDescription:
+      "Read the Terms of Use for Canary Waves, including permitted use, liability limits, intellectual property, and governing law.",
     seo: {
       metaTitle: "Terms of Use | Canary Waves",
       metaDescription:

@@ -1,11 +1,20 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import SectionRenderer from "@/components/SectionRenderer";
 import { getPageBySlug } from "@/lib/strapi";
+import { FALLBACK_PRIVACY_POLICY } from "@/content/legal-fallback";
+import type { PageSection } from "@/lib/page-content";
 
-export const revalidate = 300;
+export const revalidate = 60;
+
+const FALLBACK_SECTIONS: PageSection[] = [
+  {
+    type: "legal-documents",
+    privacyPolicy: FALLBACK_PRIVACY_POLICY,
+    termsOfUse: "",
+  },
+];
 
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getPageBySlug("privacy-policy");
@@ -24,13 +33,14 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function PrivacyPolicyPage() {
   const page = await getPageBySlug("privacy-policy");
-  if (page.slug !== "privacy-policy" || !page.sections.length) notFound();
+  const sections =
+    page.slug === "privacy-policy" && page.sections.length ? page.sections : FALLBACK_SECTIONS;
 
   return (
     <>
       <Navbar />
       <main className="site-main">
-        <SectionRenderer sections={page.sections} />
+        <SectionRenderer sections={sections} />
       </main>
       <Footer />
     </>

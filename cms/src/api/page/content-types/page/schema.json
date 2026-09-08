@@ -21,6 +21,16 @@
       "targetField": "title",
       "required": true
     },
+    "metaTitle": {
+      "type": "string",
+      "required": false,
+      "maxLength": 120
+    },
+    "metaDescription": {
+      "type": "text",
+      "required": false,
+      "maxLength": 320
+    },
     "seo": {
       "type": "component",
       "repeatable": false,

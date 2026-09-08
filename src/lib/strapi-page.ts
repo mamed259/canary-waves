@@ -474,8 +474,14 @@ function parsePage(raw: JsonRecord | null, requestedSlug = 'home'): PageContent 
     title: getString(raw.title) ?? defaultHomePage.title,
     slug: getString(raw.slug) ?? requestedSlug,
     seo: {
-      metaTitle: getString(seo?.metaTitle) ?? undefined,
-      metaDescription: getString(seo?.metaDescription) ?? undefined,
+      metaTitle:
+        getString(raw.metaTitle) ??
+        getString(seo?.metaTitle) ??
+        undefined,
+      metaDescription:
+        getString(raw.metaDescription) ??
+        getString(seo?.metaDescription) ??
+        undefined,
       canonicalUrl: getString(seo?.canonicalUrl) ?? undefined,
     },
     sections:

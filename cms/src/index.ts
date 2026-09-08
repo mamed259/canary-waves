@@ -29,9 +29,11 @@ function applyPageDefaults(data: Record<string, unknown>) {
   const seo = asRecord(data.seo) ?? {};
   const { id: _id, documentId: _documentId, ...seoRest } = seo;
   const metaTitle =
+    (typeof data.metaTitle === "string" && data.metaTitle.trim()) ||
     (typeof seoRest.metaTitle === "string" && seoRest.metaTitle.trim()) ||
     (title ? `${title} | ${BRAND}` : BRAND);
   const metaDescription =
+    (typeof data.metaDescription === "string" && data.metaDescription.trim()) ||
     (typeof seoRest.metaDescription === "string" && seoRest.metaDescription.trim()) ||
     (title
       ? `${title} from ${BRAND}. Read the full page for details and related policies.`
@@ -40,10 +42,12 @@ function applyPageDefaults(data: Record<string, unknown>) {
     (typeof seoRest.canonicalUrl === "string" && seoRest.canonicalUrl.trim()) ||
     (slug ? `${SITE_ORIGIN}/${slug}` : SITE_ORIGIN);
 
+  data.metaTitle = String(metaTitle).slice(0, 120);
+  data.metaDescription = String(metaDescription).slice(0, 320);
   data.seo = {
     ...seoRest,
-    metaTitle: String(metaTitle).slice(0, 120),
-    metaDescription: String(metaDescription).slice(0, 320),
+    metaTitle: data.metaTitle,
+    metaDescription: data.metaDescription,
     canonicalUrl,
   };
 }
@@ -66,12 +70,21 @@ export default {
     const { ensureFormSubmissionPermissions } = await import(
       "./bootstrap/ensure-form-submission-permissions"
     );
+    const { ensurePagePermissions } = await import("./bootstrap/ensure-page-permissions");
     const { seedLegalPagesIfMissing } = await import("./bootstrap/seed-legal-pages");
 
     try {
       await seedHomePageIfMissing(strapi as Parameters<typeof seedHomePageIfMissing>[0]);
     } catch (error) {
       strapi.log.warn(`[seed] Home page seed skipped: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    try {
+      await ensurePagePermissions(strapi as Parameters<typeof ensurePagePermissions>[0]);
+    } catch (error) {
+      strapi.log.warn(
+        `[permissions] Page public find skipped: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
 
     try {
