@@ -51,10 +51,12 @@ function applyPageDefaults(data: Record<string, unknown>) {
 export default {
   register({ strapi }: { strapi: Core.Strapi }) {
     strapi.documents.use(async (ctx, next) => {
-      if (ctx.uid === PAGE_UID) {
-        const data = asRecord(ctx.params?.data);
-        if (data) applyPageDefaults(data);
+      const request = ctx as { uid?: string; params?: { data?: unknown } };
+      if (request.uid !== PAGE_UID) {
+        return next();
       }
+      const data = asRecord(request.params?.data);
+      if (data) applyPageDefaults(data);
       return next();
     });
   },
@@ -73,7 +75,7 @@ export default {
     }
 
     try {
-      await seedLegalPagesIfMissing(strapi);
+      await seedLegalPagesIfMissing(strapi as Parameters<typeof seedLegalPagesIfMissing>[0]);
     } catch (error) {
       strapi.log.warn(`[seed] Legal pages skipped: ${error instanceof Error ? error.message : String(error)}`);
     }

@@ -1,6 +1,12 @@
-import type { Core } from "@strapi/strapi";
-
-const PAGE_UID = "api::page.page" as const;
+type StrapiInstance = {
+  log: {
+    info: (message: string) => void;
+  };
+  documents: (uid: string) => {
+    findMany: (params?: Record<string, unknown>) => Promise<unknown[]>;
+    create: (params: { data: Record<string, unknown>; status?: string }) => Promise<unknown>;
+  };
+};
 
 const PRIVACY_POLICY_BODY = `Privacy Policy
 
@@ -29,26 +35,33 @@ You agree to use the Site only for lawful purposes.
 ## 2. Contact Us
 For questions about these Terms, please contact jack@canary-waves.com.`;
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
 async function createPageIfMissing(
-  strapi: Core.Strapi,
+  strapi: StrapiInstance,
   data: Record<string, unknown> & { slug: string },
 ) {
-  const pages = await strapi.documents(PAGE_UID).findMany({
+  const pages = await strapi.documents("api::page.page").findMany({
     filters: { slug: { $eq: data.slug } },
     status: "draft",
   });
-  if (pages[0]?.documentId) {
+  const existing = Array.isArray(pages) ? asRecord(pages[0]) : null;
+  if (existing?.documentId) {
     strapi.log.info(`[seed] Skipped existing page: ${data.slug}`);
     return;
   }
-  await strapi.documents(PAGE_UID).create({
-    data: data as never,
+  await strapi.documents("api::page.page").create({
+    data,
     status: "published",
   });
   strapi.log.info(`[seed] Created page: ${data.slug}`);
 }
 
-export async function seedLegalPagesIfMissing(strapi: Core.Strapi) {
+export async function seedLegalPagesIfMissing(strapi: StrapiInstance) {
   await createPageIfMissing(strapi, {
     title: "Privacy Policy",
     slug: "privacy-policy",
